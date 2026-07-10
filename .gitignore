@@ -1,0 +1,5 @@
+.vscode/
+GMS-Bond/bin/
+GMS-Bond/obj/
+GMS-Bond/.vs/
+GMS-Bond/IdentitySeeder.cs
