@@ -322,7 +322,6 @@ namespace GMS_Bond.Services
             };
             return ApiResponse<MemberDto>.Ok(data);
         }
-
         
         public async Task<ApiResponse<List<UserDto>>> GetStaff()
         {
