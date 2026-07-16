@@ -1,0 +1,8 @@
+﻿namespace IronCore.DTOs
+{
+    public class MonthlyActivity
+    {
+        public required int NumberOfAttendedSessions {  get; set; }
+        public required string Month {  get; set; }
+    }
+}

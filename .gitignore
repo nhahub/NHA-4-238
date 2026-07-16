@@ -1,6 +1,6 @@
 .vscode/
-GMS-Bond/bin/
-GMS-Bond/obj/
-GMS-Bond/.vs/
-GMS-Bond/IdentitySeeder.cs
-GMS-Bond/wwwroot/uploads/
+IronCore/bin/
+IronCore/obj/
+IronCore/.vs/
+IronCore/IdentitySeeder.cs
+IronCore/wwwroot/uploads/
