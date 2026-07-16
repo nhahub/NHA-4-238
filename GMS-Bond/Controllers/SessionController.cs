@@ -16,8 +16,8 @@ namespace GMS_Bond.Controllers
             _sessionService = sessionService;
         }
 
-        [HttpPost]
-       // [Authorize(Roles ="Staff")]
+        [HttpPost("Attendance")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> AttendSession(AttendSessionDto dto)
         {
             var result = await _sessionService.AttendSession(dto);
@@ -25,14 +25,16 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpGet("Today")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> TodaySessions()
         {
             var result = await _sessionService.GetTodaySessions();
             return StatusCode(statusCode: result.StatusCode, result);
         }
 
-         [HttpPost("Generate")]
-         public async Task<IActionResult> GenerateNextSessions()
+        [HttpPost("Generate")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GenerateNextSessions()
         {
             var result = await _sessionService.AddNextSessions(60);
             return StatusCode(statusCode: result.StatusCode,result);

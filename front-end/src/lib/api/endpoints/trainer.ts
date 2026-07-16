@@ -2,7 +2,7 @@ import { apiGet, apiForm, apiDelete } from "../client";
 import type { Trainer } from "@/types";
 
 export const trainerApi = {
-  getAll: () => apiGet<Trainer[]>("/api/Trainer/Trainers"),
+  getAll: () => apiGet<Trainer[]>("/api/Trainers"),
   getById: (id: number) => apiGet<Trainer>(`/api/Trainer/${id}`),
   create: (formData: FormData) =>
     apiForm<Trainer>("/api/Trainer", "POST", formData),

@@ -16,24 +16,16 @@ namespace GMS_Bond.Controllers
             => _packageService = packageService;
 
 
-        [HttpGet("Packages")]
-        //[Authorize(Roles ="Member")]
+        [HttpGet("/api/Packages")]
         public async Task<IActionResult> GetPackages()
         {
             var result = await _packageService.GetPackages();
             return StatusCode(statusCode: result.StatusCode, result);
         }
 
-        [HttpGet("Packages/{planId:int}")]
-        //[Authorize(Roles ="Member")]
-        public async Task<IActionResult> GetPackageByPlan(int planId)
-        {
-            var result = await _packageService.GetPackagesByPlan(planId);
-            return StatusCode(statusCode: result.StatusCode , result);
-        }
 
         [HttpGet("{packageId:int}")]
-        //[Authorize(Roles = "Member")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> GetPackage(int packageId)
         {
             var result = await _packageService.GetPackage(packageId);
@@ -41,7 +33,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles ="Admin,Staff")]
+        [Authorize(Roles ="Admin,Staff")]
         public async Task<IActionResult> AddPackage(AddUpdatePackageDto dto)
         {
             if (!ModelState.IsValid)
@@ -61,7 +53,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpDelete("{packageId:int}")]
-        //[Authorize(Roles = "Admin,Staff")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> DeletePackage(int packageId)
         {
 
@@ -71,7 +63,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPut("{packageId:int}")]
-        //[Authorize(Roles = "Admin,Staff")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> UpdatePackage(int packageId , AddUpdatePackageDto dto)
         {
             if (!ModelState.IsValid)

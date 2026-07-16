@@ -17,12 +17,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { memberApi } from "@/lib/api/endpoints/member";
+import { useRequireRole } from "@/hooks/use-require-role";
 
 export const Route = createFileRoute("/admin/subscriptions")({
   component: Page,
 });
 
 function Page() {
+  const allowed = useRequireRole(["Admin", "Staff"]);
+
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -30,9 +33,14 @@ function Page() {
   const subscriptionsQuery = useQuery<Subscription[]>({
     queryKey: ["subscriptions"],
     queryFn: subscriptionApi.getAll,
+    enabled: allowed,
   });
-  const plansQuery = useQuery({ queryKey: ["plans"], queryFn: planApi.getAll });
-  const packagesQuery = useQuery({ queryKey: ["packages"], queryFn: packageApi.getAll });
+  const plansQuery = useQuery({ queryKey: ["plans"], queryFn: planApi.getAll, enabled: allowed });
+  const packagesQuery = useQuery({
+    queryKey: ["packages"],
+    queryFn: packageApi.getAll,
+    enabled: allowed,
+  });
 
   const createSubscription = useMutation({
     mutationFn: subscriptionApi.create,
@@ -57,7 +65,7 @@ function Page() {
   const filteredSubscriptions = subscriptions.filter((sub) =>
     sub.memberName.toLowerCase().includes(search.toLowerCase()),
   );
-
+  if (!allowed) return null;
   return (
     <>
       <AdminTableShell

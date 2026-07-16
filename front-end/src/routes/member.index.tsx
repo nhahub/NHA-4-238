@@ -13,19 +13,20 @@ import { Badge, DataCard, StatCard, VoltButton } from "@/components/ui-bits";
 import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { memberApi } from "@/lib/api/endpoints/member";
-
+import { useRequireRole } from "@/hooks/use-require-role";
 export const Route = createFileRoute("/member/")({
   component: MemberDashboard,
 });
 
 function MemberDashboard() {
+  const allowed = useRequireRole(["Member"]);
   const { user } = useAuth();
   const memberId = user?.id;
 
   const { data, isLoading } = useQuery({
     queryKey: ["member-dashboard", memberId],
     queryFn: () => memberApi.getDashboard(memberId!),
-    enabled: !!memberId,
+    enabled: !!memberId && allowed,
   });
 
   const upcomingSessions = data?.upcomingSessions ?? [];
@@ -52,7 +53,7 @@ function MemberDashboard() {
   if (isLoading) {
     return <div className="text-white/60">Loading dashboard…</div>;
   }
-
+  if (!allowed) return null;
   return (
     <div className="space-y-6">
       {/* Stats */}

@@ -1,11 +1,9 @@
 import { apiGet, apiForm, apiJson, apiDelete } from "../client";
-import type { StaffDto, AddStaffDto, UpdateStaffDto } from "@/types";
+import type { UserDto, AddStaffDto, UpdateUserDto } from "@/types";
 
 export const staffApi = {
-  getAll: () => apiGet<StaffDto[]>("/api/Account/Staffs"),
+  getAll: () => apiGet<UserDto[]>("/api/Account/Staff"),
   create: (formData: FormData) =>
-    apiForm<StaffDto>("/api/Account/Staff", "POST", formData),
-  update: (id: number, body: UpdateStaffDto) =>
-    apiJson<StaffDto>(`/api/Account/Staff/${id}`, "PUT", body),
-  delete: (id: number) => apiDelete(`/api/Account/Staff/${id}`),
+    apiForm<UserDto>("/api/Account/Staff", "POST", formData),
+ 
 };

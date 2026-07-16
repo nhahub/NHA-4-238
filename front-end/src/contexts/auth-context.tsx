@@ -1,7 +1,13 @@
 // src/contexts/auth-context.tsx
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type { AuthUser, LoginRequest, LoginResponseDto } from "@/types/auth";
-import { getStoredUser, setSession, clearSession, updateStoredUser } from "@/lib/auth-storage";
+import {
+  getStoredUser,
+  setSession,
+  clearSession,
+  updateStoredUser,
+  isExpired,
+} from "@/lib/auth-storage";
 import { apiJson } from "@/lib/api/client";
 import { memberApi } from "@/lib/api/endpoints/member";
 
@@ -21,10 +27,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    setUser(getStoredUser());
+    if (isExpired()) {
+      clearSession();
+      setUser(null);
+    } else {
+      setUser(getStoredUser());
+    }
     setIsHydrated(true);
   }, []);
-
   const login = useCallback(async (credentials: LoginRequest, rememberMe: boolean) => {
     const dto = await apiJson<LoginResponseDto>("/api/Account/Login", "POST", credentials);
     setSession(dto, rememberMe);

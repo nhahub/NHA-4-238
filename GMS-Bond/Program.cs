@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Text.Json.Serialization;
 namespace GMS_Bond
 {
     public class Program
@@ -30,7 +29,7 @@ namespace GMS_Bond
             {
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
-
+                
 
             }).AddEntityFrameworkStores<AcadamyContext>();
             builder.Services.AddScoped<IJwtService, JwtService>();

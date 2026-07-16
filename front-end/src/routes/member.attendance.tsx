@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { memberApi } from "@/lib/api/endpoints/member";
 import { useAuth } from "@/contexts/auth-context";
+import { useRequireRole } from "@/hooks/use-require-role";
 
 export const Route = createFileRoute("/member/attendance")({
   component: Page,
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/member/attendance")({
 type DayState = "attended" | "missed" | "upcoming" | "empty";
 
 function Page() {
+  const allowed = useRequireRole(["Member"]);
   const { user } = useAuth();
   const memberId = user?.id;
 
@@ -29,7 +31,7 @@ function Page() {
   const { data, isLoading } = useQuery({
     queryKey: ["member-calendar", memberId, cursor.year, cursor.month],
     queryFn: () => memberApi.getCalendar(memberId!, cursor.year, cursor.month),
-    enabled: !!memberId,
+    enabled: !!memberId && allowed,
   });
 
   const recentSessions = data?.recentSessions ?? [];
@@ -81,7 +83,7 @@ function Page() {
     if (s.attended) streak++;
     else break;
   }
-
+  if (!allowed) return null;
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-4">

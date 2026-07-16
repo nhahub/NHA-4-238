@@ -2,7 +2,7 @@ import { apiGet, apiJson, apiDelete } from "../client";
 import type { Plan, AddUpdatePlanDto } from "@/types";
 
 export const planApi = {
-  getAll: () => apiGet<Plan[]>("/api/Plan/Plans"),
+  getAll: () => apiGet<Plan[]>("/api/Plans"),
   getById: (id: number) => apiGet<Plan>(`/api/Plan/${id}`),
   create: (body: AddUpdatePlanDto) => apiJson<Plan>("/api/Plan", "POST", body),
   update: (id: number, body: AddUpdatePlanDto) =>

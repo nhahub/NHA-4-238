@@ -1,4 +1,4 @@
-export type StaffDto = {
+export type UserDto = {
   id: number;
   firstName: string;
   lastName: string;
@@ -22,7 +22,7 @@ export type AddStaffDto = {
   image?: File;
 };
 
-export type UpdateStaffDto = {
+export type UpdateUserDto = {
   firstName: string;
   lastName: string;
   birthDate: string;
@@ -30,3 +30,4 @@ export type UpdateStaffDto = {
   email: string;
   phoneNumber: string;
 };
+

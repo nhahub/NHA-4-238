@@ -135,27 +135,6 @@ namespace GMS_Bond.Services
 
         }
 
-        public async Task<ApiResponse<LoginResponseDto>> DeleteAccount(int userId)
-        {
-            UserAccount? user = await _userManager.FindByIdAsync(userId.ToString());
-
-            if (user is null)
-            {
-                return ApiResponse<LoginResponseDto>.NotFound("Account not found");
-            }
-            string? image = user.ImagePath;
-            var result = await _userManager.DeleteAsync(user);
-
-            if (!result.Succeeded)
-                return ApiResponse<LoginResponseDto>.Fail("Error deleting an account", result.Errors.Select(e => e.Description).ToList());
-
-            if (image != null)
-                _imageService.DeleteFile(image);
-
-            return ApiResponse<LoginResponseDto>.Ok(null, "Account deleted successfully");
-
-        }
-
         public async Task<ApiResponse<LoginResponseDto?>> Login(LoginRequestDto request)
         {
             if (request is null || request.UsernameOrEmail is null || request.Password is null)
@@ -189,6 +168,86 @@ namespace GMS_Bond.Services
             return ApiResponse<LoginResponseDto?>.Created(response, "Logged in successfully");
 
         }
+        
+        public async Task<ApiResponse<LoginResponseDto>> DeleteAccount(int userId)
+        {
+            UserAccount? user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user is null)
+            {
+                return ApiResponse<LoginResponseDto>.NotFound("Account not found");
+            }
+            string? image = user.ImagePath;
+            var result = await _userManager.DeleteAsync(user);
+
+            if (!result.Succeeded)
+                return ApiResponse<LoginResponseDto>.Fail("Error deleting an account", result.Errors.Select(e => e.Description).ToList());
+
+            if (image != null)
+                _imageService.DeleteFile(image);
+
+            return ApiResponse<LoginResponseDto>.Ok(null, "Account deleted successfully");
+
+        }
+
+        public async Task<ApiResponse<MemberDto?>> ChangePassword(int userId, UpdatePasswordDto dto)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+                return ApiResponse<MemberDto?>.NotFound("Account not found");
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
+            if (!result.Succeeded)
+                return ApiResponse<MemberDto?>.
+                     Fail("Error changing password", result.Errors.Select(e => e.Description).ToList());
+            return ApiResponse<MemberDto?>.Ok(null);
+        }
+
+        public async Task<ApiResponse<bool>> DeleteImage(int userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+                return ApiResponse<bool>.NotFound("User not found");
+
+            if (user.ImagePath != null)
+                _imageService.DeleteFile(user.ImagePath);
+            user.ImagePath = null;
+            await _userManager.UpdateAsync(user);
+            return ApiResponse<bool>.Ok(true);
+        }
+        
+        public async Task<ApiResponse<string?>> UpdateImage(int userId, IFormFile image)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+                return ApiResponse<string?>.NotFound("User not found");
+
+            string createdImageName;
+
+            if (image.Length > 5 * 1024 * 1024)
+                return ApiResponse<string?>.ValidationError(message: "File size should not exceed 5 MB");
+
+            try
+            {
+                createdImageName = await _imageService.SaveFileAsync(image, allowedImageExtensions);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<string?>.Fail(ex.Message);
+            }
+
+            if (user.ImagePath != null)
+                _imageService.DeleteFile(user.ImagePath);
+            user.ImagePath = createdImageName;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                return ApiResponse<string?>
+                    .Fail("Error updating image", result.Errors.Select(e => e.Description).ToList());
+
+            return ApiResponse<string?>.Ok(createdImageName);
+
+        }
 
         public async Task<ApiResponse<MemberDto?>> UpdateMember(int memberId, UpdateMemberDto dto)
         {
@@ -220,35 +279,22 @@ namespace GMS_Bond.Services
             return ApiResponse<MemberDto?>.Ok(data);
         }
 
-        public async Task<ApiResponse<MemberDto?>> ChangePassword(int userId , UpdatePasswordDto dto)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-                return ApiResponse<MemberDto?>.NotFound("Account not found");
-
-            var result = await _userManager.ChangePasswordAsync(user , dto.OldPassword , dto.NewPassword);
-            if (!result.Succeeded)
-               return ApiResponse<MemberDto?>.
-                    Fail("Error changing password", result.Errors.Select(e => e.Description).ToList());
-            return ApiResponse<MemberDto?>.Ok(null);
-        }
-        
         public ApiResponse<List<MemberDto>> GetMembers()
         {
-            var data =  _memberRepository.GetAll()
+            var data = _memberRepository.GetAll()
                 .Select(m => new MemberDto
-            {
-                Id = m.MemberId,
-                FirstName = m.Account.FirstName,
-                LastName= m.Account.LastName,
-                BirthDate = m.Account.BirthDate.ToString("yyyy-MM-dd"),
-                Email =m.Account.Email!,
-                PhoneNumber = m.Account.PhoneNumber!,
-                CreatedAt = m.Account.CreatedAt.ToString("yyyy-MM-dd"),
-                ImageUrl = m.Account.ImagePath,
-                ActiveSubscriptions = m.Subscriptions.Where(s => s.EndDate >= DateTime.UtcNow).Count(),
-                TotalAttendedSessions = m.Attendaces.Count(),
-            }).ToList();
+                {
+                    Id = m.MemberId,
+                    FirstName = m.Account.FirstName,
+                    LastName = m.Account.LastName,
+                    BirthDate = m.Account.BirthDate.ToString("yyyy-MM-dd"),
+                    Email = m.Account.Email!,
+                    PhoneNumber = m.Account.PhoneNumber!,
+                    CreatedAt = m.Account.CreatedAt.ToString("yyyy-MM-dd"),
+                    ImageUrl = m.Account.ImagePath,
+                    ActiveSubscriptions = m.Subscriptions.Where(s => s.EndDate >= DateTime.UtcNow).Count(),
+                    TotalAttendedSessions = m.Attendaces.Count(),
+                }).ToList();
 
             return ApiResponse<List<MemberDto>>.Ok(data);
         }
@@ -276,11 +322,12 @@ namespace GMS_Bond.Services
             };
             return ApiResponse<MemberDto>.Ok(data);
         }
+
         
-        public async Task<ApiResponse<List<StaffDto>>> GetStaffs()
+        public async Task<ApiResponse<List<UserDto>>> GetStaff()
         {
             var data = (await _userManager.GetUsersInRoleAsync(Roles.Staff))
-                .Select(u => new StaffDto
+                .Select(u => new UserDto
                 {
                     Id = u.Id,
                     Username = u.UserName!,
@@ -292,16 +339,16 @@ namespace GMS_Bond.Services
                     CreatedAt = u.CreatedAt.ToString("yyyy-MM-dd"),
                     ImageUrl=u.ImagePath,
                 }).ToList();
-            return ApiResponse<List<StaffDto>>.Ok(data);
+            return ApiResponse<List<UserDto>>.Ok(data);
         }
 
-        public async Task<ApiResponse<StaffDto?>> GetStaff(int staffId)
+        public async Task<ApiResponse<UserDto?>> GetUser(int userId)
 
         {
-            var user = await _userManager.FindByIdAsync(staffId.ToString());
-            if (user == null || !await _userManager.IsInRoleAsync(user, Roles.Staff))
-                return ApiResponse<StaffDto?>.NotFound("User not found");
-            var data = new StaffDto
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+                return ApiResponse<UserDto?>.NotFound("User not found");
+            var data = new UserDto
             {
                 Id = user.Id,
                 FirstName = user.FirstName,
@@ -314,16 +361,16 @@ namespace GMS_Bond.Services
                 Username = user.UserName!
 
             };
-            return ApiResponse<StaffDto?>.Ok(data);
+            return ApiResponse<UserDto?>.Ok(data);
         }
 
-        public async Task<ApiResponse<StaffDto?>> UpdateStaff(int staffId, UpdateStaffDto dto)
+        public async Task<ApiResponse<UserDto?>> UpdateUser(int staffId, UpdateUserDto dto)
         {
 
             var user = await _userManager.FindByIdAsync(staffId.ToString());
 
-            if (user == null || !await _userManager.IsInRoleAsync(user, Roles.Staff))
-                return ApiResponse<StaffDto?>.NotFound("User not found");
+            if (user == null)
+                return ApiResponse<UserDto?>.NotFound("User not found");
 
 
             user.UserName = dto.Username;
@@ -337,10 +384,10 @@ namespace GMS_Bond.Services
             
 
             if (!result.Succeeded)
-                return ApiResponse<StaffDto?>
-                    .Fail("Error updating staff", result.Errors.Select(e => e.Description).ToList());
+                return ApiResponse<UserDto?>
+                    .Fail("Error updating user", result.Errors.Select(e => e.Description).ToList());
 
-            var data = new StaffDto
+            var data = new UserDto
             {
                 Id = user.Id,
                 FirstName = user.FirstName,
@@ -352,53 +399,10 @@ namespace GMS_Bond.Services
                 Email = user.Email,
                 ImageUrl = user.ImagePath
             };
-            return ApiResponse<StaffDto?>.Ok(data);
+            return ApiResponse<UserDto?>.Ok(data);
         }
 
-        public async Task<ApiResponse<string?>> UpdateImage(int userId , IFormFile image)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if(user == null)
-                return ApiResponse<string?>.NotFound("User not found");
 
-            string createdImageName;
-
-            if (image.Length > 5 * 1024 * 1024)
-                return ApiResponse<string?>.ValidationError(message: "File size should not exceed 5 MB");
-
-            try
-            {
-                createdImageName = await _imageService.SaveFileAsync(image, allowedImageExtensions);
-            }
-            catch (Exception ex)
-            {
-                return ApiResponse<string?>.Fail(ex.Message);
-            }
-
-            if (user.ImagePath != null)
-                _imageService.DeleteFile(user.ImagePath);
-            user.ImagePath = createdImageName;
-            
-            var result  = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded)
-                return ApiResponse<string?>
-                    .Fail("Error updating image", result.Errors.Select(e => e.Description).ToList());
-
-            return ApiResponse<string?>.Ok(createdImageName);
-
-        }
-
-        public async Task<ApiResponse<bool>> DeleteImage(int userId)
-        {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null)
-                return ApiResponse<bool>.NotFound("User not found");
-
-            if (user.ImagePath != null)
-                _imageService.DeleteFile(user.ImagePath);
-            user.ImagePath = null;
-            return ApiResponse<bool>.Ok(true);
-        }
 
            
     }

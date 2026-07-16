@@ -8,6 +8,9 @@ import { packageApi } from "@/lib/api/endpoints/package";
 import { planApi } from "@/lib/api/endpoints/plan";
 import { PackageForm, type PackageFormValues } from "@/components/package-form";
 import { AlertTriangle, Edit, Trash2 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useRequireRole } from "@/hooks/use-require-role";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,19 +34,28 @@ export const Route = createFileRoute("/admin/packages")({
 });
 
 function Page() {
+  const allowed = useRequireRole(["Admin", "Staff"]);
   const queryClient = useQueryClient();
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editingPackageId, setEditingPackageId] = useState<number | null>(null);
   const [deletingPackage, setDeletingPackage] = useState<PackageOption | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const packagesQuery = useQuery({ queryKey: ["packages"], queryFn: packageApi.getAll });
-  const plansQuery = useQuery({ queryKey: ["plans"], queryFn: planApi.getAll });
+  const packagesQuery = useQuery({
+    queryKey: ["packages"],
+    queryFn: packageApi.getAll,
+    enabled: allowed,
+  });
+  const plansQuery = useQuery({
+    queryKey: ["plans"],
+    queryFn: planApi.getAll,
+    enabled: allowed,
+  });
 
   const editingPackageQuery = useQuery({
     queryKey: ["package", editingPackageId],
     queryFn: () => packageApi.getById(editingPackageId!),
-    enabled: formMode === "edit" && editingPackageId != null,
+    enabled: formMode === "edit" && editingPackageId != null && allowed,
   });
 
   const createPackage = useMutation({
@@ -130,6 +142,8 @@ function Page() {
   const filteredPackages = packages.filter((pkg) =>
     pkg.title.toLowerCase().includes(search.toLowerCase()),
   );
+
+  if (!allowed) return null;
   return (
     <>
       <AdminTableShell

@@ -2,10 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AdminTableShell, Td, Th } from "@/components/admin-table";
 import { type MemberDto } from "@/types/domain/member";
 import { memberApi } from "@/lib/api/endpoints/member";
+import { accountApi } from "@/lib/api/endpoints/account";
 import { Eye, Trash2, AlertTriangle, User } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { MemberForm, type MemberFormValues } from "@/components/member-form";
+import { useAuth } from "@/contexts/auth-context";
+import { useRequireRole } from "@/hooks/use-require-role";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,15 +32,23 @@ export const Route = createFileRoute("/admin/members")({
 });
 
 function Page() {
+  const allowed = useRequireRole(["Admin", "Staff"]);
   const queryClient = useQueryClient();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [viewingMember, setViewingMember] = useState<MemberDto | null>(null);
   const [deletingMember, setDeletingMember] = useState<MemberDto | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const membersQuery = useQuery({ queryKey: ["members"], queryFn: memberApi.getAll });
-  const members = membersQuery.data ?? [];
+  const membersQuery = useQuery({
+    queryKey: ["members"],
+    queryFn: memberApi.getAll,
+    enabled: allowed,
+  });
 
+  const members = membersQuery.data ?? [];
+  const { user } = useAuth();
+  const isAdmin = user?.role === "Admin";
+  const [noPermission, setNoPermission] = useState(false);
   const createMember = useMutation({
     mutationFn: memberApi.create,
     onSuccess: async () => {
@@ -49,7 +60,7 @@ function Page() {
   });
 
   const deleteMember = useMutation({
-    mutationFn: memberApi.delete,
+    mutationFn: accountApi.delete,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["members"] });
       setDeletingMember(null);
@@ -83,6 +94,7 @@ function Page() {
       member.firstName.toLowerCase().includes(search.toLowerCase()) ||
       member.lastName.toLowerCase().includes(search.toLowerCase()),
   );
+  if (!allowed) return null;
   return (
     <>
       <AdminTableShell
@@ -159,7 +171,13 @@ function Page() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setDeletingMember(m)}
+                      onClick={() => {
+                        if (!isAdmin) {
+                          setNoPermission(true);
+                          return;
+                        }
+                        setDeletingMember(m);
+                      }}
                       className="grid h-8 w-8 place-items-center rounded-lg bg-white/5 text-white/60 hover:bg-red-500/10 hover:text-red-400"
                       aria-label={`Delete ${m.firstName}`}
                     >
@@ -278,6 +296,29 @@ function Page() {
               className="bg-red-500 text-white hover:bg-red-600"
             >
               {deleteMember.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* No permission notice */}
+      <AlertDialog open={noPermission} onOpenChange={setNoPermission}>
+        <AlertDialogContent className="border-white/10 bg-slate-950 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-400" />
+              Permission Required
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Only admins can delete members. Please contact an admin if this member needs to be
+              removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => setNoPermission(false)}
+              className="bg-volt text-black hover:bg-volt/90"
+            >
+              Got it
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

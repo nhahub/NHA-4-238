@@ -7,7 +7,7 @@ import { useState } from "react";
 import { type Trainer } from "@/types/domain/trainer";
 import { trainerApi } from "@/lib/api/endpoints/trainer";
 import { sportApi } from "@/lib/api/endpoints/sport";
-
+import { useRequireRole } from "@/hooks/use-require-role";
 import { TrainerForm, type TrainerFormValues } from "@/components/trainer-form";
 import {
   AlertDialog,
@@ -32,19 +32,28 @@ export const Route = createFileRoute("/admin/trainers")({
 });
 
 function Page() {
+  const allowed = useRequireRole(["Admin", "Staff"]);
   const queryClient = useQueryClient();
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editingTrainerId, setEditingTrainerId] = useState<number | null>(null);
   const [deletingTrainer, setDeletingTrainer] = useState<Trainer | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const trainersQuery = useQuery({ queryKey: ["trainers"], queryFn: trainerApi.getAll });
-  const sportsQuery = useQuery({ queryKey: ["sports"], queryFn: sportApi.getAll });
+  const trainersQuery = useQuery({
+    queryKey: ["trainers"],
+    queryFn: trainerApi.getAll,
+    enabled: allowed,
+  });
+  const sportsQuery = useQuery({
+    queryKey: ["sports"],
+    queryFn: sportApi.getAll,
+    enabled: allowed,
+  });
 
   const editingTrainerQuery = useQuery({
     queryKey: ["trainer", editingTrainerId],
     queryFn: () => trainerApi.getById(editingTrainerId!),
-    enabled: formMode === "edit" && editingTrainerId != null,
+    enabled: formMode === "edit" && editingTrainerId != null && allowed,
   });
 
   const createTrainer = useMutation({
@@ -144,6 +153,7 @@ function Page() {
   const filteredTrainers = trainers.filter((trainer) =>
     trainer.name.toLowerCase().includes(search.toLowerCase()),
   );
+  if (!allowed) return null;
   return (
     <>
       <AdminTableShell

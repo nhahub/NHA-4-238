@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using GMS_Bond.DTOs;
 using GMS_Bond.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -17,8 +18,8 @@ namespace GMS_Bond.Controllers
             _trainerService = trainerService;
         }
 
-        [HttpGet("Trainers")]
-        public async Task<IActionResult> TrainersList()
+        [HttpGet("/api/Trainers")]
+        public async Task<IActionResult> Trainers()
         {
             var result = await _trainerService.GetTrainersList();
             result.Data?.ForEach(t => t.ImageUrl = $"{Request.Scheme}://{Request.Host}/uploads/{t.ImageUrl}");
@@ -27,6 +28,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpGet("{trainerId:int}")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> GetTrainer(int trainerId)
         {
             var result = await _trainerService.GetTrainer(trainerId);
@@ -37,6 +39,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> AddTrainer([FromForm] AddTrainerDto dto)
         {
             if(!ModelState.IsValid)
@@ -57,6 +60,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPut("{trainerId:int}")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> UpdateTrainer(int  trainerId , [FromForm] UpdateTrainerDto dto)
         {
             if (!ModelState.IsValid)
@@ -74,7 +78,9 @@ namespace GMS_Bond.Controllers
             return StatusCode(statusCode: result.StatusCode, result);
         }
        
+        
         [HttpDelete("{trainerId:int}")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> DeleteTrainer(int trainerId) 
         {
            var result = await _trainerService.DeleteTrainer(trainerId);

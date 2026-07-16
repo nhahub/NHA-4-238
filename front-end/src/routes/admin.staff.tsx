@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AdminTableShell, Td, Th } from "@/components/admin-table";
-import { type StaffDto } from "@/types/domain/staff";
+import { type UserDto } from "@/types/domain/staff";
 import { staffApi } from "@/lib/api/endpoints/staff";
 import { accountApi } from "@/lib/api/endpoints/account";
 import { Edit, Trash2, AlertTriangle, User } from "lucide-react";
@@ -41,15 +41,15 @@ function Page() {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
 
-  const [editingStaff, setEditingStaff] = useState<StaffDto | null>(null);
-  const [deletingStaff, setDeletingStaff] = useState<StaffDto | null>(null);
+  const [editingStaff, setEditingStaff] = useState<UserDto | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState<UserDto | null>(null);
 
   const [createError, setCreateError] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
-  const staffQuery = useQuery({ queryKey: ["staff"], queryFn: staffApi.getAll });
+  const staffQuery = useQuery({ queryKey: ["staff"], queryFn: staffApi.getAll, enabled: allowed });
   const staff = staffQuery.data ?? [];
 
   // ── Mutations ────────────────────────────────────────────
@@ -65,7 +65,7 @@ function Page() {
 
   const updateStaff = useMutation({
     mutationFn: ({ id, body }: { id: number; body: StaffUpdateValues }) =>
-      staffApi.update(id, body),
+      accountApi.update(id, body),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["staff"] });
       setUpdateError(null);
@@ -103,7 +103,7 @@ function Page() {
   });
 
   const deleteStaff = useMutation({
-    mutationFn: staffApi.delete,
+    mutationFn: accountApi.delete,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["staff"] });
       setDeletingStaff(null);

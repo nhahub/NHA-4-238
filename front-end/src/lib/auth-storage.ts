@@ -13,6 +13,10 @@ function readFromEitherStorage(key: string): string | null {
 }
 
 export function getToken(): string | null {
+if (isExpired()) {
+    clearSession();
+    return null;
+  }
   return readFromEitherStorage(TOKEN_KEY);
 }
 

@@ -1,5 +1,6 @@
 ﻿using GMS_Bond.DTOs;
 using GMS_Bond.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,7 +16,8 @@ namespace GMS_Bond.Controllers
            _subscriptionService = subscriptionService;
         }
 
-        [HttpGet("Subscriptions")]
+        [HttpGet("/api/Subscriptions")]
+        [Authorize(Roles = "Admin,Staff")]
         public IActionResult GetSubscriptions()
         {
             var result = _subscriptionService.GetSubscriptions();
@@ -23,6 +25,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> CreateSubscription(CreateSubscriptionDto  dto)
         {
             var result = await _subscriptionService.CreateSubscription(dto);
@@ -30,6 +33,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpGet("Member/{memberid:int}")]
+        [Authorize]
         public async Task<IActionResult> MemberSubscriptions(int memberId)
         {
             var result = await _subscriptionService.MemberSubscriptions(memberId);

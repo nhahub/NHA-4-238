@@ -5,22 +5,25 @@ import { Subscription } from "@/types/domain/subscription";
 import { subscriptionApi } from "@/lib/api/endpoints/subscription";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
-
+import { useRequireRole } from "@/hooks/use-require-role";
 export const Route = createFileRoute("/member/subscriptions")({
   component: Page,
 });
 
 function Page() {
+  const allowed = useRequireRole(["Member"]);
   const { user } = useAuth();
 
   const subscriptionsQuery = useQuery({
     queryKey: ["memberSubscriptions", user!.id],
     queryFn: () => subscriptionApi.getByMember(user!.id),
+    enabled: allowed,
   });
 
   const memberSubscriptions = subscriptionsQuery.data ?? [];
   const active = memberSubscriptions.filter((s) => s.status === "Active");
   const expired = memberSubscriptions.filter((s) => s.status === "Expired");
+  if (!allowed) return null;
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">

@@ -2,7 +2,8 @@
 using GMS_Bond.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
+using Microsoft.IdentityModel.JsonWebTokens;
+using System.Security.Claims;
 
 
 namespace GMS_Bond.Controllers
@@ -42,7 +43,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPost("Staff")]
-       // [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RegisterStaff(RegisterStaffDto dto)
         {
             if (!ModelState.IsValid)
@@ -81,27 +82,34 @@ namespace GMS_Bond.Controllers
         }
 
 
-        [HttpDelete("Staff/{userId:int}")]
-       // [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeleteStaff(int userId)
+        [HttpDelete("{userId:int}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteAccount(int userId)
         {
             var result = await _accountService.DeleteAccount(userId);
             return StatusCode(statusCode: result.StatusCode, result);
-
-        }
-
-        [HttpDelete("Member/{userId:int}")]
-       // [Authorize(Roles = "Admin,Member")]
-        public async Task<IActionResult> DeleteMember(int userId)
-        {
-            var result = await _accountService.DeleteAccount(userId);
-            return StatusCode(statusCode: result.StatusCode, result);
-
         }
 
         [HttpPut("Member/{memberId:int}")]
+        [Authorize(Roles = "Admin,Member")]
+
         public async Task<IActionResult> UpdateMember(int memberId, UpdateMemberDto dto)
         {
+            var callerIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (callerIdClaim is null || !int.TryParse(callerIdClaim, out var callerId))
+            {
+                var unAuth = ApiResponse<bool>.Unauthorized();
+                return StatusCode(statusCode: unAuth.StatusCode, unAuth);
+            }
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isAdmin && callerId != memberId)
+            {
+                var forbid = ApiResponse<bool>.Forbid("You are not allowed to update do this action");
+                return StatusCode(statusCode: forbid.StatusCode, forbid);
+            }
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values
@@ -116,10 +124,26 @@ namespace GMS_Bond.Controllers
             var result = await _accountService.UpdateMember(memberId, dto);
             return StatusCode(statusCode: result.StatusCode, result);
         }
-        
+
         [HttpPut("{userId:int}/Password")]
+        [Authorize]
         public async Task<IActionResult> ChangePassword(int userId, UpdatePasswordDto dto)
         {
+            var callerIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (callerIdClaim is null || !int.TryParse(callerIdClaim, out var callerId))
+            {
+                var unAuth = ApiResponse<bool>.Unauthorized();
+                return StatusCode(statusCode: unAuth.StatusCode, unAuth);
+            }
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isAdmin && callerId != userId)
+            {
+                var forbid = ApiResponse<bool>.Forbid("You are not allowed to update do this action");
+                return StatusCode(statusCode: forbid.StatusCode, forbid);
+            }
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values
@@ -137,6 +161,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpGet("Members")]
+        [Authorize(Roles = "Admin,Staff")]
         public IActionResult GetMembers()
         {
             var result = _accountService.GetMembers();
@@ -147,14 +172,27 @@ namespace GMS_Bond.Controllers
             });
 
             return StatusCode(statusCode: result.StatusCode, result);
-
-
-
         }
 
         [HttpGet("Member/{memberId:int}")]
+        [Authorize]
         public async Task<IActionResult> GetMember(int memberId)
         {
+            var callerIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                               ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (callerIdClaim is null || !int.TryParse(callerIdClaim, out var callerId))
+            {
+                var unAuth = ApiResponse<bool>.Unauthorized();
+                return StatusCode(statusCode: unAuth.StatusCode, unAuth);
+            }
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isAdmin && callerId != memberId)
+            {
+                var forbid = ApiResponse<bool>.Forbid("You are not allowed to do this action");
+                return StatusCode(statusCode: forbid.StatusCode, forbid);
+            }
             var result = await _accountService.GetMember(memberId);
             if (result.Data != null && result.Data.ImageUrl != null)
                 result.Data.ImageUrl = $"{Request.Scheme}://{Request.Host}/uploads/{result.Data.ImageUrl}";
@@ -162,10 +200,11 @@ namespace GMS_Bond.Controllers
 
         }
 
-        [HttpGet("Staffs")]
-        public async Task<IActionResult> GetStaffs()
+        [HttpGet("Staff")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetStaff()
         {
-            var result = await _accountService.GetStaffs();
+            var result = await _accountService.GetStaff();
             result.Data!.ForEach(e =>
             {
                 if (e.ImageUrl != null)
@@ -174,17 +213,36 @@ namespace GMS_Bond.Controllers
             return StatusCode(statusCode: result.StatusCode, result);
         }
 
-        [HttpGet("Staff")]
-        public async Task<IActionResult> GetStaff(int staffId)
+        [HttpGet("User/{userId:int}")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> GetUser(int userId)
         {
-            var result = await _accountService.GetStaff(staffId);
-            if(result.Data != null)
+            var result = await _accountService.GetUser(userId);
+            if (result.Data != null && result.Data.ImageUrl != null)
                 result.Data.ImageUrl = $"{Request.Scheme}://{Request.Host}/uploads/{result.Data.ImageUrl}";
             return StatusCode(statusCode: result.StatusCode, result);
         }
-        [HttpPut("Staff/{staffId:int}")]
-        public async Task<IActionResult> UpdateStaff(int staffId , UpdateStaffDto dto)
+
+        [HttpPut("User/{userId:int}")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> UpdateUser(int userId, UpdateUserDto dto)
         {
+            var callerIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (callerIdClaim is null || !int.TryParse(callerIdClaim, out var callerId))
+            {
+                var unAuth = ApiResponse<bool>.Unauthorized();
+                return StatusCode(statusCode: unAuth.StatusCode, unAuth);
+            }
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isAdmin && callerId != userId)
+            {
+                var forbid = ApiResponse<bool>.Forbid("You are not allowed to do this action");
+                return StatusCode(statusCode: forbid.StatusCode, forbid);
+            }
+
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values
@@ -192,19 +250,36 @@ namespace GMS_Bond.Controllers
                 .Select(e => e.ErrorMessage)
                 .ToList();
 
-                var response = ApiResponse<UserAccount>.ValidationError(errors);
+                var response = ApiResponse<UserDto>.ValidationError(errors);
                 return StatusCode(statusCode: response.StatusCode, response);
             }
 
-            var result = await _accountService.UpdateStaff(staffId, dto);
+            var result = await _accountService.UpdateUser(userId, dto);
             if (result.Data != null && result.Data.ImageUrl != null)
                 result.Data.ImageUrl = $"{Request.Scheme}://{Request.Host}/uploads/{result.Data.ImageUrl}";
             return StatusCode(statusCode: result.StatusCode, result);
         }
 
         [HttpPut("{userId:int}/Image")]
-        public async Task<IActionResult> UpdateImage(int userId , IFormFile image)
+        [Authorize]
+        public async Task<IActionResult> UpdateImage(int userId, IFormFile image)
         {
+            var callerIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (callerIdClaim is null || !int.TryParse(callerIdClaim, out var callerId))
+            {
+                var unAuth = ApiResponse<bool>.Unauthorized();
+                return StatusCode(statusCode: unAuth.StatusCode, unAuth);
+            }
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isAdmin && callerId != userId)
+            {
+                var forbid = ApiResponse<bool>.Forbid("You are not allowed to do this action");
+                return StatusCode(statusCode: forbid.StatusCode, forbid);
+            }
+
             var result = await _accountService.UpdateImage(userId, image);
             if (result.Data != null)
                 result.Data = $"{Request.Scheme}://{Request.Host}/uploads/{result.Data}";
@@ -212,11 +287,31 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpDelete("{userId:int}/Image")]
+        [Authorize]
         public async Task<IActionResult> DeleteImage(int userId)
         {
+            var callerIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (callerIdClaim is null || !int.TryParse(callerIdClaim, out var callerId))
+            {
+                var unAuth = ApiResponse<bool>.Unauthorized();
+                return StatusCode(statusCode: unAuth.StatusCode, unAuth);
+            }
+            var isAdmin = User.IsInRole("Admin");
+
+            if (!isAdmin && callerId != userId)
+            {
+                var forbid = ApiResponse<bool>.Forbid("You are not allowed to do this action");
+                return StatusCode(statusCode: forbid.StatusCode, forbid);
+            }
+
+
             var result = await _accountService.DeleteImage(userId);
             return StatusCode(statusCode: result.StatusCode, result);
         }
+
+
     }
 
 }

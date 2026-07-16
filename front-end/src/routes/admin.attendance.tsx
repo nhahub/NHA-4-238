@@ -5,18 +5,22 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type TodaySessionDto } from "@/types/domain/session";
 import { sessionApi } from "@/lib/api/endpoints/session";
+import { useRequireRole } from "@/hooks/use-require-role";
 
 export const Route = createFileRoute("/admin/attendance")({
   component: Page,
 });
 
 function Page() {
+  const allowed = useRequireRole(["Admin", "Staff"]); // first hook, correct roles for that page
+
   const queryClient = useQueryClient();
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
 
   const sessionsQuery = useQuery({
     queryKey: ["today-sessions"],
     queryFn: sessionApi.getToday,
+    enabled: allowed,
   });
 
   const sessions: TodaySessionDto[] = sessionsQuery.data ?? [];
@@ -54,6 +58,8 @@ function Page() {
     0,
   );
   const totalNoShows = Math.max(0, totalMembers - totalChecked);
+
+  if (!allowed) return null;
 
   if (sessionsQuery.isLoading) {
     return (

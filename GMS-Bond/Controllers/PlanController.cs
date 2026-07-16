@@ -16,24 +16,15 @@ namespace GMS_Bond.Controllers
             _planService = planService;
         }
 
-        [HttpGet("Plans")]
-        //[Authorize(Roles = "Admin,Staff,Member")]
+        [HttpGet("/api/Plans")]
         public IActionResult GetPlans()
         {
             var result = _planService.GetPlans();
             return StatusCode(statusCode: result.StatusCode, result);
         }
 
-        [HttpGet("Plans/{sportId:int}")]
-        //[Authorize(Roles = "Admin,Staff,Member")]
-        public IActionResult GetPlansBySport(int sportId)
-        {
-            var result = _planService.GetPlansBySport(sportId);
-            return StatusCode(statusCode: result.StatusCode, result);
-        }
-
         [HttpGet("{planId:int}")]
-        //[Authorize(Roles = "Admin,Staff,Member")]
+        [Authorize]
         public async Task<IActionResult> GetPlan(int planId)
         {
             var result = await _planService.GetPlan(planId);
@@ -41,7 +32,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles ="Admin,Staff")]
+        [Authorize(Roles ="Admin,Staff")]
         public async Task<IActionResult> AddPlan(AddUpdatePlanDto dto)
         {
             if (!ModelState.IsValid)
@@ -61,7 +52,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPut("{planId:int}")]
-        //[Authorize(Roles ="Admin,Staff")]
+        [Authorize(Roles ="Admin,Staff")]
         public async Task<IActionResult> UpdatePlan(int planId, AddUpdatePlanDto dto)
         {
             if (!ModelState.IsValid)
@@ -81,7 +72,7 @@ namespace GMS_Bond.Controllers
         
 
         [HttpDelete("{planId:int}")]
-        //[Authorize(Roles ="Admin,Staff")]
+        [Authorize(Roles ="Admin,Staff")]
         public async Task<IActionResult> DeletePlan(int planId)
         {
             var result = await _planService.DeletePlan(planId);

@@ -1,4 +1,5 @@
 ﻿using GMS_Bond.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,13 +16,15 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpGet("Calendar/{memberId:int}")]
-        public async Task<IActionResult> MemberCalendar(int memberId, int year , int month)
+        [Authorize]
+        public async Task<IActionResult> MemberCalendar(int memberId, [FromQuery] int year , [FromQuery] int month)
         {
             var result = await _memberService.MemberMonthCalendar(memberId ,year , month);
             return StatusCode(statusCode: result.StatusCode, result);
         }
 
         [HttpGet("Dashboard/{memberId:int}")]
+        [Authorize]
         public async Task<IActionResult> MemberDashboard(int memberId)
         {
             var result = await _memberService.MemberDashboard(memberId);

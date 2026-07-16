@@ -13,9 +13,9 @@ namespace GMS_Bond.Services
         Task<ApiResponse<MemberDto?>> ChangePassword(int userId, UpdatePasswordDto dto);
         ApiResponse<List<MemberDto>> GetMembers();
         Task<ApiResponse<MemberDto>> GetMember(int memberId);
-        Task<ApiResponse<List<StaffDto>>> GetStaffs();
-        Task<ApiResponse<StaffDto?>> GetStaff(int staffId);
-        Task<ApiResponse<StaffDto?>> UpdateStaff(int userId, UpdateStaffDto dto);
+        Task<ApiResponse<List<UserDto>>> GetStaff();
+        Task<ApiResponse<UserDto?>> GetUser(int staffId);
+        Task<ApiResponse<UserDto?>> UpdateUser(int userId, UpdateUserDto dto);
         Task<ApiResponse<string?>> UpdateImage(int userId, IFormFile image);
         Task<ApiResponse<bool>> DeleteImage(int userId);
     }

@@ -23,22 +23,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
+import { useRequireRole } from "@/hooks/use-require-role";
 export const Route = createFileRoute("/admin/sports")({
   component: Page,
 });
 
 function Page() {
+  const allowed = useRequireRole(["Admin", "Staff"]);
   const queryClient = useQueryClient();
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editingSportId, setEditingSportId] = useState<number | null>(null);
   const [deletingSport, setDeletingSport] = useState<Sport | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const sportsQuery = useQuery({ queryKey: ["sports"], queryFn: sportApi.getAll });
+  const sportsQuery = useQuery({
+    queryKey: ["sports"],
+    queryFn: sportApi.getAll,
+    enabled: allowed,
+  });
   const editingSportQuery = useQuery({
     queryKey: ["sport", editingSportId],
     queryFn: () => sportApi.getById(editingSportId!),
-    enabled: formMode === "edit" && editingSportId != null,
+    enabled: formMode === "edit" && editingSportId != null && allowed,
   });
 
   const createSport = useMutation({
@@ -127,6 +132,7 @@ function Page() {
   const [search, setSearch] = useState("");
 
   const filteredSports = sports.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()));
+  if (!allowed) return null;
   return (
     <>
       <AdminTableShell

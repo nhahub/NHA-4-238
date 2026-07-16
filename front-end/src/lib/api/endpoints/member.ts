@@ -15,7 +15,6 @@ export const memberApi = {
     apiForm<LoginResponseDto>("/api/Account/Member", "POST", formData),
   update: (id: number, body: UpdateMemberDto) =>
     apiJson<MemberDto>(`/api/Account/Member/${id}`, "PUT", body),
-  delete: (id: number) => apiDelete(`/api/Account/Member/${id}`),
 
   // Member-specific endpoints
   getCalendar: (memberId: number, year: number, month: number) =>

@@ -1,6 +1,6 @@
 import { type FormEvent } from "react";
 import { Save, Upload, KeyRound, Camera, Trash2 } from "lucide-react";
-import type { StaffDto } from "@/types/domain/staff";
+import type { UserDto } from "@/types/domain/staff";
 
 // ── Create ──────────────────────────────────────────────────
 export type StaffCreateValues = {
@@ -141,7 +141,7 @@ export function StaffCreateForm({
 // EDIT FORM  — three independent sections
 // ─────────────────────────────────────────────────────────────
 type EditFormProps = {
-  staff: StaffDto;
+  staff: UserDto;
   isUpdating?: boolean;
   isChangingPassword?: boolean;
   isUpdatingImage?: boolean;

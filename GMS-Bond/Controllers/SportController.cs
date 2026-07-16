@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using GMS_Bond.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace GMS_Bond.Controllers
 {
@@ -15,8 +16,8 @@ namespace GMS_Bond.Controllers
             _sportService = sportService;
         }
 
-        [HttpGet("Sports")]
-        public async Task<IActionResult> SportsList()
+        [HttpGet("/api/Sports")]
+        public async Task<IActionResult> Sports()
         {
             var result = await _sportService.GetSportsList();
             result.Data?.ForEach(s => s.ImageUrl = $"{Request.Scheme}://{Request.Host}/uploads/{s.ImageUrl}");
@@ -25,6 +26,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpGet("{sportId:int}")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> GetSport(int sportId)
         {
             var result = await _sportService.GetSport(sportId);
@@ -34,6 +36,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPut("{sportId:int}")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> UpdateSport(int sportId , UpdateSportDto dto)
         {
             if (!ModelState.IsValid)
@@ -51,6 +54,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> AddSport(AddSportDto dto)
         {
             if (!ModelState.IsValid)
@@ -68,6 +72,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpDelete("{sportId:int}")]
+        [Authorize(Roles = "Admin,Staff")]
         public async Task<IActionResult> DeleteSport(int sportId)
         {
             var result = await _sportService.DeleteSport(sportId);

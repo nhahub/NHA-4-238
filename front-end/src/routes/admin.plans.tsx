@@ -9,6 +9,9 @@ import { trainerApi } from "@/lib/api/endpoints/trainer";
 import { sportApi } from "@/lib/api/endpoints/sport";
 import { PlanForm, type PlanFormValues } from "@/components/plan-form";
 import { AlertTriangle, Edit, Trash2 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useRequireRole } from "@/hooks/use-require-role";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,20 +35,33 @@ export const Route = createFileRoute("/admin/plans")({
 });
 
 function Page() {
+  const allowed = useRequireRole(["Admin", "Staff"]);
   const queryClient = useQueryClient();
   const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
   const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
   const [deletingPlan, setDeletingPlan] = useState<Plan | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const plansQuery = useQuery({ queryKey: ["plans"], queryFn: planApi.getAll });
-  const trainersQuery = useQuery({ queryKey: ["trainers"], queryFn: trainerApi.getAll });
-  const sportsQuery = useQuery({ queryKey: ["sports"], queryFn: sportApi.getAll });
+  const plansQuery = useQuery({
+    queryKey: ["plans"],
+    queryFn: planApi.getAll,
+    enabled: allowed,
+  });
+  const trainersQuery = useQuery({
+    queryKey: ["trainers"],
+    queryFn: trainerApi.getAll,
+    enabled: allowed,
+  });
+  const sportsQuery = useQuery({
+    queryKey: ["sports"],
+    queryFn: sportApi.getAll,
+    enabled: allowed,
+  });
 
   const editingPlanQuery = useQuery({
     queryKey: ["plan", editingPlanId],
     queryFn: () => planApi.getById(editingPlanId!),
-    enabled: formMode === "edit" && editingPlanId != null,
+    enabled: formMode === "edit" && editingPlanId != null && allowed,
   });
 
   const createPlan = useMutation({
@@ -126,6 +142,7 @@ function Page() {
   const [search, setSearch] = useState("");
 
   const filteredPlans = plans.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()));
+  if (!allowed) return null;
   return (
     <>
       <AdminTableShell

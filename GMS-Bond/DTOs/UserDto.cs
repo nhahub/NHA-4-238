@@ -1,6 +1,6 @@
 ﻿namespace GMS_Bond.DTOs
 {
-    public class StaffDto
+    public class UserDto
     {
         public required int Id { get; set; }
         public required string Username { get; set; }

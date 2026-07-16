@@ -1,4 +1,5 @@
 ﻿using GMS_Bond.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -16,6 +17,7 @@ namespace GMS_Bond.Controllers
         }
 
         [HttpGet("Dashboard")]
+        [Authorize(Roles ="Admin")]
         public async Task<IActionResult> Dashboard()
         {
             var result = await _adminService.AdminDashboard();

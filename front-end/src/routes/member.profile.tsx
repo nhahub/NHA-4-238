@@ -28,7 +28,7 @@ function Page() {
   const profileQuery = useQuery({
     queryKey: ["member-profile", user?.id],
     queryFn: () => memberApi.getById(user!.id),
-    enabled: !!user,
+    enabled: !!user && allowed,
   });
 
   const updateProfile = useMutation({

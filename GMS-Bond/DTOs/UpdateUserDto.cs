@@ -2,7 +2,7 @@
 
 namespace GMS_Bond.DTOs
 {
-    public class UpdateStaffDto
+    public class UpdateUserDto
     {
         [Required]
         public string Username { get; set; } = null!;
