@@ -14,9 +14,12 @@ import {
 import { PublicNav } from "@/components/public-nav";
 import { PublicFooter } from "@/components/public-footer";
 import { VoltButton, SectionHeader, Badge } from "@/components/ui-bits";
-import { api, type Plan } from "@/lib/api";
 import heroImg from "@/assets/hero-athlete.jpg";
-
+import { type Plan } from "@/types/domain/plan";
+import { planApi } from "@/lib/api/endpoints/plan";
+import { sportApi } from "@/lib/api/endpoints/sport";
+import { trainerApi } from "@/lib/api/endpoints/trainer";
+import { packageApi } from "@/lib/api/endpoints/package";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -36,10 +39,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const plansQuery = useQuery({ queryKey: ["plans"], queryFn: api.plans });
-  const packagesQuery = useQuery({ queryKey: ["packages"], queryFn: api.packages });
-  const sportsQuery = useQuery({ queryKey: ["sports"], queryFn: api.sports });
-  const trainersQuery = useQuery({ queryKey: ["trainers"], queryFn: api.trainers });
+  const plansQuery = useQuery({ queryKey: ["plans"], queryFn: planApi.getAll });
+  const packagesQuery = useQuery({ queryKey: ["packages"], queryFn: packageApi.getAll });
+  const sportsQuery = useQuery({ queryKey: ["sports"], queryFn: sportApi.getAll });
+  const trainersQuery = useQuery({ queryKey: ["trainers"], queryFn: trainerApi.getAll });
   const sports = sportsQuery.data ?? [];
   const trainers = trainersQuery.data ?? [];
   const plans = plansQuery.data ?? [];
